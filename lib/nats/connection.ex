@@ -49,6 +49,22 @@ defmodule Nats.Connection do
     |> encode
   end
 
+  @doc """
+  Returns the NATS server URL
+
+  The following options can be overwritten
+    * `:host`     - Which IP or Hostname to connect to (default: localhost)
+    * `:port`     - On which port (default: 4222)
+
+  ## Examples
+
+    Connection.url #=> "tcp://localhost:4222"
+    Connection.url([host: "myhost", port: 3333]) #=> "tcp://myhost:3333"
+  """
+  def url(), do: url([])
+  def url(opts), do: default_url |> Keyword.merge(opts) |> _url
+  defp _url(opts), do: "tcp://#{opts[:host]}:#{opts[:port]}"
+
   defp encode(answer), do: JSON.encode!(answer)
   defp default_options do
     [lang: "elixir",
@@ -56,5 +72,8 @@ defmodule Nats.Connection do
      verbose: @default_verbose,
      pedantic: @default_pedantic]
   end
+
+  defp default_url, do: [host: "localhost", port: 4222]
+
 
 end

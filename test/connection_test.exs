@@ -39,4 +39,15 @@ end
            Connection.configs([user: "a", password: "b"])
   end
 
+  test "url default" do
+    assert "tcp://localhost:4222" == Connection.url
+  end
+
+  test "url overwrite" do
+    assert "tcp://myhost:4222" == Connection.url([host: "myhost"])
+    assert "tcp://localhost:3333" == Connection.url([port: 3333])
+    assert "tcp://localhost:3334" == Connection.url([port: "3334"])
+    assert "tcp://yourhost:3335" == Connection.url([host: "yourhost", port: "3335"])
+  end
+
 end
