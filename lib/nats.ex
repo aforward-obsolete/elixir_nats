@@ -1,0 +1,2 @@
+defmodule Nats do
+end
