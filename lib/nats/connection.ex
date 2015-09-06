@@ -36,6 +36,28 @@ defmodule Nats.Connection do
     * `:password` - The user's password for accessing the NATS server.
                     This is omitted by default
 
+  In your config/config.exs file, you can provide your connection parameters
+
+    config :nats, Nats.Connection,
+      url: "mynatsserver.com",
+      port: 4222,
+      verbose: true,
+      pedantic: false,
+      user: "aforward",
+      password: "nicetry"
+
+  Here are the default values for each
+
+    config :nats, Nats.Connection,
+      url: "localhost",
+      port: 4222,
+      verbose: false,
+      pedantic: false,
+
+  If you must override the connections, you can do so, but configurations should
+  really be provided in ./config/config.exs (or the environment specific
+  file, e.g. prod.exs)
+
   ## Examples
 
     Connection.configs #=> "{\"lang\":\"elixir\",\"version\":\"0.0.1\",\"verbose\":false,\"pedantic\":false}"
@@ -63,7 +85,7 @@ defmodule Nats.Connection do
     Connection.url([host: "myhost", port: 3333]) #=> "tcp://myhost:3333"
   """
   def url(), do: url([])
-  def url(opts), do: default_url |> Keyword.merge(opts) |> _url
+  def url(opts), do: default_options |> Keyword.merge(opts) |> _url
   defp _url(opts), do: "tcp://#{opts[:host]}:#{opts[:port]}"
 
   defp encode(answer), do: JSON.encode!(answer)
@@ -71,9 +93,10 @@ defmodule Nats.Connection do
     [lang: "elixir",
      version: version,
      verbose: @default_verbose,
-     pedantic: @default_pedantic]
+     pedantic: @default_pedantic,
+     host: "localhost",
+     port: 4222]
+    |> Keyword.merge(Application.get_env(:nats, __MODULE__) || [])
   end
-
-  defp default_url, do: [host: "localhost", port: 4222]
 
 end
