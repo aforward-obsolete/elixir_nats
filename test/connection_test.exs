@@ -10,13 +10,13 @@ defmodule Nats.ConnectionTest do
            Connection.configs
   end
 
-test "configs overwrite some" do
-    assert JSON.encode!([version: "0.0.999",
-                         lang: "elixir",
-                         verbose: false,
-                         pedantic: false]) ==
-           Connection.configs([version: "0.0.999"])
-end
+  test "configs overwrite some" do
+      assert JSON.encode!([version: "0.0.999",
+                           lang: "elixir",
+                           verbose: false,
+                           pedantic: false]) ==
+             Connection.configs([version: "0.0.999"])
+  end
 
   test "configs overwrite all" do
     assert JSON.encode!([version: "0.0.999",
@@ -27,6 +27,14 @@ end
                                lang: "please don't",
                                verbose: true,
                                pedantic: true])
+  end
+
+  test "configs remove extra" do
+    assert JSON.encode!([lang: "elixir",
+                         version: Connection.version,
+                         verbose: false,
+                         pedantic: false]) ==
+           Connection.configs([blah: 1])
   end
 
   test "configs add more" do

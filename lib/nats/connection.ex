@@ -46,6 +46,7 @@ defmodule Nats.Connection do
   def configs(opts) do
     default_options
     |> Keyword.merge(opts)
+    |> Keyword.take([:lang, :version, :verbose, :pedantic, :user, :password])
     |> encode
   end
 
@@ -74,6 +75,5 @@ defmodule Nats.Connection do
   end
 
   defp default_url, do: [host: "localhost", port: 4222]
-
 
 end
