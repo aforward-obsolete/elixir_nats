@@ -16,7 +16,8 @@ config :nats, Nats.Connection,
   verbose: true,
   pedantic: false,
   user: "aforward",
-  password: "nicetry"
+  password: "nicetry",
+  tcp: [:binary, active: false],
 ```
 
 To integrate into your project, add to your ```mix.exs``` file:

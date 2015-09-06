@@ -4,3 +4,4 @@
 /tmp
 erl_crash.dump
 *.ez
+/config/prod.exs

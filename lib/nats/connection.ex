@@ -7,8 +7,27 @@ defmodule Nats.Connection do
   environment.
   """
 
+  require Logger
   @default_verbose false
   @default_pedantic false
+
+  @doc """
+
+  """
+  def connect(), do: connect(configs)
+  def connect(opts), do: opts |> normalize |> _connect
+  defp _connect(opts) do
+    Logger.info("Attempting to connect to NATS Server: #{opts[:host]}:#{opts[:port]}")
+    {ok, socket} = :gen_tcp.connect(opts[:host] |> to_char_list,
+                                    opts[:port] |> to_i,
+                                    [:binary, active: false])
+    # answer = :gen_tcp.connect(opts[:host], opts[:port], [:binary, active: false])
+    case ok do
+      :ok -> Logger.info("Connected.")
+      _   -> Logger.error("Unable to connect to NATS Server: #{ok} (#{socket})")
+    end
+    {ok, socket}
+  end
 
   @doc """
   Returns the current version of this client libary.
@@ -65,12 +84,7 @@ defmodule Nats.Connection do
     Connection.configs([verbose: true, user: \"aforward\"]) #=> "{\"lang\":\"elixir\",\"version\":\"0.0.1\",\"verbose\":true,\"pedantic\":false,\"user\":\"aforward\"}"
   """
   def configs(), do: configs([])
-  def configs(opts) do
-    default_options
-    |> Keyword.merge(opts)
-    |> Keyword.take([:lang, :version, :verbose, :pedantic, :user, :password])
-    |> encode
-  end
+  def configs(opts), do: opts |> normalize |> limit(:configs) |> encode
 
   @doc """
   Returns the NATS server URL
@@ -85,18 +99,35 @@ defmodule Nats.Connection do
     Connection.url([host: "myhost", port: 3333]) #=> "tcp://myhost:3333"
   """
   def url(), do: url([])
-  def url(opts), do: default_options |> Keyword.merge(opts) |> _url
+  def url(opts), do: opts |> normalize |> limit(:url) |> _url
   defp _url(opts), do: "tcp://#{opts[:host]}:#{opts[:port]}"
 
-  defp encode(answer), do: JSON.encode!(answer)
+  defp normalize(opts), do: default_options |> Keyword.merge(opts)
+
+  defp limit(opts, :configs), do: opts |> Keyword.take([:lang, :version, :verbose, :pedantic, :user, :password])
+  defp limit(opts, :url), do: opts |> Keyword.take([:host, :port])
+  defp limit(opts, :tcp), do: opts |> Keyword.get(:tcp)
+
+  defp encode(answer), do: answer # JSON.encode!(answer)
+
   defp default_options do
-    [lang: "elixir",
-     version: version,
-     verbose: @default_verbose,
-     pedantic: @default_pedantic,
-     host: "localhost",
-     port: 4222]
-    |> Keyword.merge(Application.get_env(:nats, __MODULE__) || [])
+    incode = [lang: "elixir",
+              version: version,
+              verbose: @default_verbose,
+              pedantic: @default_pedantic,
+              host: "localhost",
+              port: 4222,
+              tcp: [:binary, active: false]]
+    from_app = Application.get_env(:nats, __MODULE__)
+    case from_app do
+      nil -> Logger.debug("No configs loaded (config :nats, Nats.Connection), using in code defaults")
+      _   -> Logger.debug("NATS configs: #{from_app |> inspect}")
+    end
+     Keyword.merge(incode, from_app || [])
   end
+
+  defp to_i(str) when is_binary(str), do: to_i(Integer.parse(str))
+  defp to_i({as_i, _}), do: as_i
+  defp to_i(as_i), do: as_i
 
 end
