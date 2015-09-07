@@ -29,7 +29,8 @@ defmodule Nats.Mixfile do
 
   defp deps do
     [{:json, "~> 0.3.0"},
-     {:poolboy,  "~> 1.4"}]
+     {:poolboy,  "~> 1.4"},
+     {:inch_ex, only: :docs}]
   end
 
   defp description do

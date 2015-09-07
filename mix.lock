@@ -1,2 +1,4 @@
-%{"json": {:hex, :json, "0.3.2"},
+%{"inch_ex": {:hex, :inch_ex, "0.4.0"},
+  "json": {:hex, :json, "0.3.2"},
+  "poison": {:hex, :poison, "1.5.0"},
   "poolboy": {:hex, :poolboy, "1.5.1"}}

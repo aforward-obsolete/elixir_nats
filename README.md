@@ -4,8 +4,9 @@ A [Elixir](http://elixir-lang.org/) client for the [NATS messaging system](https
 
 [![License MIT](https://img.shields.io/npm/l/express.svg)](http://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/aforward/elixir_nats.svg?branch=master)](https://travis-ci.org/aforward/elixir_nats)
+[![Inline docs](http://inch-ci.org/github/aforward/elixir_nats.svg?branch=master&style=flat)](http://inch-ci.org/github/aforward/elixir_nats)
 
-Here is an example configuration to connect to your NATS server.
+Here is a sample configuration to connect to your NATS server.
 
 ```elixir
 # In your config/config.exs file

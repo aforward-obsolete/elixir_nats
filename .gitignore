@@ -1,6 +1,7 @@
 /_build
 /deps
 /doc
+/docs
 /tmp
 erl_crash.dump
 *.ez
