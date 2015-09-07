@@ -8,46 +8,32 @@ defmodule Nats.Connection do
   """
 
   require Logger
-  @default_verbose false
-  @default_pedantic false
+  @tcp_attrs [:host, :port, :tcp]
+  @poolboy_attrs [:pool_size, :pool_max_overflow]
+  @client_attrs [:lang, :version, :verbose, :pedantic, :user, :password]
+  @incode_defaults [lang: "elixir",
+                   version: Nats.Mixfile.version,
+                   verbose: false,
+                   pedantic: false,
+                   host: "localhost",
+                   port: 4222,
+                   tcp: [:binary, active: false],
+                   pool_size: 1,
+                   pool_max_overflow: 1]
 
   @doc """
+  Returns all available options for configuring your NATS client
 
-  """
-  def connect(), do: connect(configs)
-  def connect(opts), do: opts |> normalize |> _connect
-  defp _connect(opts) do
-    Logger.info("Attempting to connect to NATS Server: #{opts[:host]}:#{opts[:port]}")
-    {ok, socket} = :gen_tcp.connect(opts[:host] |> to_char_list,
-                                    opts[:port] |> to_i,
-                                    [:binary, active: false])
-    # answer = :gen_tcp.connect(opts[:host], opts[:port], [:binary, active: false])
-    case ok do
-      :ok -> Logger.info("Connected.")
-      _   -> Logger.error("Unable to connect to NATS Server: #{ok} (#{socket})")
-    end
-    {ok, socket}
-  end
+  Accessing the TCP server
 
-  @doc """
-  Returns the current version of this client libary.
+    * `:host`      - Which IP or Hostname to connect to (default: 'localhost')
+    * `:port`      - On which port (default: 4222)
+    * `:tcp`       - Additional TCP options (default: [:binary, active: false])
 
-  # Examples
-    Connection.version #=> "0.0.1"
-  """
-  def version(), do: Nats.Mixfile.version
+  Configuring the client
 
-  @doc """
-  Returns a JSON representation of the NATS options
-
-  The following configurations should not be changed,
-  but could be if you know what you are doing
-
-    * `:lang`     - The client language, which is "elixir"
+    * `:lang`     - The client language, which is "elixir" (should not change)
     * `:version`  - The client version, which is found in mix.exs
-
-  Available configurations that you can overwrite:
-
     * `:verbose`  - Do you want verbose outputs?  Defaults to false
     * `:pedantic` - Do you have a schtickler or not? Defaults to false
     * `:user`     - The user that is accessing the NATS server.
@@ -55,75 +41,56 @@ defmodule Nats.Connection do
     * `:password` - The user's password for accessing the NATS server.
                     This is omitted by default
 
-  In your config/config.exs file, you can provide your connection parameters
+  Configuring the connection pool (based on poolboy)
 
-    config :nats, Nats.Connection,
-      url: "mynatsserver.com",
-      port: 4222,
-      verbose: true,
-      pedantic: false,
-      user: "aforward",
-      password: "nicetry"
-
-  Here are the default values for each
-
-    config :nats, Nats.Connection,
-      url: "localhost",
-      port: 4222,
-      verbose: false,
-      pedantic: false,
-
-  If you must override the connections, you can do so, but configurations should
-  really be provided in ./config/config.exs (or the environment specific
-  file, e.g. prod.exs)
-
-  ## Examples
-
-    Connection.configs #=> "{\"lang\":\"elixir\",\"version\":\"0.0.1\",\"verbose\":false,\"pedantic\":false}"
-
-    Connection.configs([verbose: true, user: \"aforward\"]) #=> "{\"lang\":\"elixir\",\"version\":\"0.0.1\",\"verbose\":true,\"pedantic\":false,\"user\":\"aforward\"}"
+    * `:pool_size`    - How many connections to maintain (default: 1)
+    * `:pool_max_overflow` - How many overflows to support (default: 1)
   """
-  def configs(), do: configs([])
-  def configs(opts), do: opts |> normalize |> limit(:configs) |> encode
+  def opts(), do: opts([])
+  def opts(overwrite), do: _opts(overwrite, @tcp_attrs ++ @poolboy_attrs ++ @client_attrs)
+  defp _opts(overwrite, params), do: default_opts |> Keyword.merge(overwrite) |> Keyword.take(params)
 
   @doc """
-  Returns the NATS server URL
-
-  The following options can be overwritten
-    * `:host`     - Which IP or Hostname to connect to (default: localhost)
-    * `:port`     - On which port (default: 4222)
-
-  ## Examples
-
-    Connection.url #=> "tcp://localhost:4222"
-    Connection.url([host: "myhost", port: 3333]) #=> "tcp://myhost:3333"
+  Returns all connection pooling options, including
+    * `:pool_size`    - How many connections to maintain (default: 1)
+    * `:pool_max_overflow` - How many overflows to support (default: 1)
   """
-  def url(), do: url([])
-  def url(opts), do: opts |> normalize |> limit(:url) |> _url
-  defp _url(opts), do: "tcp://#{opts[:host]}:#{opts[:port]}"
+  def poolboy_opts(), do: poolboy_opts([])
+  def poolboy_opts(overwrite), do: _opts(overwrite, @poolboy_attrs)
 
-  defp normalize(opts), do: default_options |> Keyword.merge(opts)
+  @doc """
+  Returns all NATS server options, including
+    * `:host`      - Which IP or Hostname to connect to (default: 'localhost')
+    * `:port`      - On which port (default: 4222)
+    * `:tcp`       - Additional TCP options (default: [:binary, active: false])
+  """
+  def tcp_opts(), do: tcp_opts([])
+  def tcp_opts(overwrite), do: _opts(overwrite, @tcp_attrs)
 
-  defp limit(opts, :configs), do: opts |> Keyword.take([:lang, :version, :verbose, :pedantic, :user, :password])
-  defp limit(opts, :url), do: opts |> Keyword.take([:host, :port])
-  defp limit(opts, :tcp), do: opts |> Keyword.get(:tcp)
-
-  defp encode(answer), do: answer # JSON.encode!(answer)
-
-  defp default_options do
-    incode = [lang: "elixir",
-              version: version,
-              verbose: @default_verbose,
-              pedantic: @default_pedantic,
-              host: "localhost",
-              port: 4222,
-              tcp: [:binary, active: false]]
-    from_app = Application.get_env(:nats, __MODULE__)
-    case from_app do
-      nil -> Logger.debug("No configs loaded (config :nats, Nats.Connection), using in code defaults")
-      _   -> Logger.debug("NATS configs: #{from_app |> inspect}")
+  @doc """
+  Attempt to connect to the NATS tcp server using the opts from  `tcp_opts/1` or `tcp_opts/2
+  """
+  def connect(), do: connect([])
+  def connect(overwrite), do: overwrite |> tcp_opts |> _connect
+  defp _connect(server) do
+    Logger.info("Attempting to connect to NATS Server: #{server[:host]}:#{server[:port]}")
+    {ok, socket} = :gen_tcp.connect(server[:host] |> to_char_list,
+                                    server[:port] |> to_i,
+                                    server[:tcp])
+    case ok do
+      :ok -> Logger.info("Connected.")
+      _   -> Logger.error("Unable to connect to NATS Server: #{ok} (#{socket})")
     end
-     Keyword.merge(incode, from_app || [])
+    {ok, socket}
+  end
+
+  defp default_opts do
+    configs = Application.get_env(:nats, __MODULE__)
+    case configs do
+      nil -> Logger.debug("No configs loaded (config :nats, Nats.Connection), using in code defaults")
+      _   -> Logger.debug("NATS configs: #{configs |> inspect}")
+    end
+     Keyword.merge(@incode_defaults, configs || [])
   end
 
   defp to_i(str) when is_binary(str), do: to_i(Integer.parse(str))
