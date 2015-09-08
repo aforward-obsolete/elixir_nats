@@ -47,6 +47,13 @@ defmodule Nats.Connection do
     * `:pool_max_overflow` - How many overflows to support (default: 1)
   """
   def opts(), do: opts([])
+
+  @doc """
+  Return all available options for configuring your NATS client, but
+  `overwrite` the loaded configurations with the provided `overwrite` map.
+
+  Look at `Nats.opts/0` for more details
+  """
   def opts(overwrite), do: _opts(overwrite, @tcp_attrs ++ @poolboy_attrs ++ @client_attrs)
   defp _opts(overwrite, params), do: default_opts |> Keyword.merge(overwrite) |> Keyword.take(params)
 
@@ -56,6 +63,13 @@ defmodule Nats.Connection do
     * `:pool_max_overflow` - How many overflows to support (default: 1)
   """
   def poolboy_opts(), do: poolboy_opts([])
+
+  @doc """
+  Returns all connection pooling options, but
+  `overwrite` the loaded configurations with the provided `overwrite` map.
+
+  Look at `Nats.poolboy_opts/0` for more details
+  """
   def poolboy_opts(overwrite), do: _opts(overwrite, @poolboy_attrs)
 
   @doc """
@@ -65,12 +79,25 @@ defmodule Nats.Connection do
     * `:tcp`       - Additional TCP options (default: [:binary, active: false])
   """
   def tcp_opts(), do: tcp_opts([])
+
+
+  @doc """
+  Returns all NATS server options, but
+  `overwrite` the loaded configurations with the provided `overwrite` map.
+
+  Look at `Nats.tcp_opts/0` for more details
+  """
   def tcp_opts(overwrite), do: _opts(overwrite, @tcp_attrs)
 
   @doc """
-  Attempt to connect to the NATS tcp server using the opts from  `tcp_opts/1` or `tcp_opts/2
+  Attempt to connect to the NATS tcp server, using the configurations from `Nats.tcp_opts/0`.
   """
   def connect(), do: connect([])
+
+  @doc """
+  Attempt to connect to the NATS tcp server, but
+  `overwrite` the loaded configurations from `Nats.tcp_opts/1`.
+  """
   def connect(overwrite), do: overwrite |> tcp_opts |> _connect
   defp _connect(server) do
     Logger.info("Attempting to connect to NATS Server: #{server[:host]}:#{server[:port]}")

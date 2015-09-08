@@ -1,11 +1,22 @@
 defmodule Nats.Worker do
+  @moduledoc ~S"""
+  This module contains GenServer functions for managing a NATS server connection.
+  """
+
   use GenServer
   require Logger
 
+  @doc """
+  Start a connection to a NATS server.  The provided arugment is not used.
+  """
   def start_link(_state) do
     GenServer.start_link(__MODULE__, %{socket: nil})
   end
 
+  @doc """
+  Initialize a TCP connection to your NATS server.  Allow invalid connections
+  until such time as tests can mock them out.
+  """
   def init(state) do
     Logger.debug "Starting Nats worker"
     case Nats.Connection.connect do

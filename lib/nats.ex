@@ -1,4 +1,10 @@
 defmodule Nats do
+  @moduledoc ~S"""
+  This module contains functions to send messages to your NATS server (http://nats.io).
+
+  For more information on connection parameters, please look at `Nats.Connection`.
+  """
+
   use Application
   require Logger
 
@@ -17,7 +23,12 @@ defmodule Nats do
   end
 
   @doc """
-  Send a command to the NATS server
+  Send a `command` to the NATS server (http://nats.io/)
+
+  ## Example
+
+  Nats.send("PING\r\n")
+
   """
   def send(command) do
     :poolboy.transaction(:nats_pool, fn(pid) -> :gen_server.call(pid, command) end)
